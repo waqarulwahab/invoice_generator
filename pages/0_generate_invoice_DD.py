@@ -7,8 +7,7 @@ import base64
 import os
 from base64 import b64encode
 from streamlit_extras.switch_page_button import switch_page
-import win32com.client
-import pythoncom
+
 from docx2pdf import convert
 import pypandoc
 import shutil
