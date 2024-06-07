@@ -13,25 +13,25 @@ st.sidebar.page_link('pages/3_doc_to_pdf.py',              label="Convert To PDF
 import os
 import pypandoc
 import streamlit as st
+from weasyprint import HTML
 
 # Ensure Pandoc is available
 pypandoc.download_pandoc()
 
-# Function to convert DOCX to PDF using pypandoc
+# Function to convert DOCX to PDF using pypandoc and weasyprint
 def convert_to_pdf(docx_file_path):
     try:
-        # Generate the PDF file name
-        pdf_path = os.path.splitext(docx_file_path)[0] + ".pdf"
+        # Convert DOCX to HTML first
+        html_content = pypandoc.convert_file(docx_file_path, 'html')
         
-        # Convert the DOCX file to PDF using pypandoc
-        output = pypandoc.convert_file(docx_file_path, 'pdf', outputfile=pdf_path)
-        assert output == ""
+        # Convert HTML to PDF using WeasyPrint
+        pdf_path = os.path.splitext(docx_file_path)[0] + ".pdf"
+        HTML(string=html_content).write_pdf(pdf_path)
 
         return pdf_path
     except Exception as e:
         st.error(f"Conversion failed: {e}")
         return None
-
 
 st.title("DOCX to PDF Converter")
 
@@ -56,12 +56,5 @@ if uploaded_file is not None:
             st.success(f"PDF file created: {pdf_path}")
         else:
             st.error("Failed to convert DOCX to PDF. Please check the file and try again.")
-
-
-
-
-
-
-
 
 
