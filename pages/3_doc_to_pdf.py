@@ -10,10 +10,12 @@ st.sidebar.page_link('pages/3_doc_to_pdf.py',              label="Convert To PDF
 
 
 
-
 import os
 import pypandoc
 import streamlit as st
+
+# Ensure Pandoc is available
+pypandoc.download_pandoc()
 
 # Function to convert DOCX to PDF using pypandoc
 def convert_to_pdf(docx_file_path):
@@ -54,6 +56,8 @@ if uploaded_file is not None:
             st.success(f"PDF file created: {pdf_path}")
         else:
             st.error("Failed to convert DOCX to PDF. Please check the file and try again.")
+
+
 
 
 
