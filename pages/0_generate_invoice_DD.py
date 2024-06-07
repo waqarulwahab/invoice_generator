@@ -7,12 +7,13 @@ import base64
 import os
 from base64 import b64encode
 from streamlit_extras.switch_page_button import switch_page
-import subprocess
+import os
+import sys
+
 
 st.sidebar.page_link('pages/0_generate_invoice_DD.py',     label="Generate Invoice",               icon="🏡")
 st.sidebar.page_link('pages/1_list_of_clients_projects.py',label="List of Clients / Projects List",icon="📓")    
 st.sidebar.page_link('pages/2_add_new_client_project.py',  label="Add New Client/Project record",  icon="✒️")  
-
 
 # Define SessionState class
 class SessionState:
@@ -119,24 +120,78 @@ def download_link_docx(doc, year, invoice_no, client, filename, text):
 
 
 
-def convert_to_pdf(docx_file):
-    # Get the absolute path of the DOCX file
-    docx_path = os.path.abspath(docx_file)
-    # Generate the PDF file name
-    pdf_path = os.path.splitext(docx_path)[0] + ".pdf"
+# def convert_to_pdf(docx_file):
+#     # Initialize COM
+#     pythoncom.CoInitialize()
+#     try:
+#         # Get the absolute path of the DOCX file
+#         docx_path = os.path.abspath(docx_file)
+#         # Generate the PDF file name
+#         pdf_path = os.path.splitext(docx_path)[0] + ".pdf"
+#         # Create an instance of the Word application
+#         word = win32com.client.Dispatch("Word.Application")
+#         try:
+#             # Open the DOCX file
+#             doc = word.Documents.Open(docx_path)
+#             # Save the document as PDF
+#             doc.SaveAs(pdf_path, FileFormat=17)  # 17 is the PDF file format
+#             doc.Close()
+#         except Exception as e:
+#             raise e
+#         finally:
+#             # Close the Word application
+#             word.Quit()
+#     finally:
+#         # Uninitialize COM
+#         pythoncom.CoUninitialize()
+#     return pdf_path
 
-    try:
-        # Use LibreOffice to convert the DOCX to PDF
-        subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', docx_path], check=True)
-    except subprocess.CalledProcessError as e:
-        st.error(f"An error occurred: {e}")
-        return None
+
+def convert_to_pdf(docx_file):
+
+    if sys.platform.startswith('win'):
+        st.write("WINDOW PLATFORM IS SELECTED")
+        import win32com.client
+        import pythoncom
+        
+        # Initialize COM
+        pythoncom.CoInitialize()
+        
+        try:
+            # Get the absolute path of the DOCX file
+            docx_path = os.path.abspath(docx_file)
+            # Generate the PDF file name
+            pdf_path = os.path.splitext(docx_path)[0] + ".pdf"
+            # Create an instance of the Word application
+            word = win32com.client.Dispatch("Word.Application")
+            try:
+                # Open the DOCX file
+                doc = word.Documents.Open(docx_path)
+                # Save the document as PDF
+                doc.SaveAs(pdf_path, FileFormat=17)  # 17 is the PDF file format
+                doc.Close()
+            except Exception as e:
+                raise e
+            finally:
+                # Close the Word application
+                word.Quit()
+        finally:
+            # Uninitialize COM
+            pythoncom.CoUninitialize()
+    elif sys.platform.startswith('linux'):
+        st.write("LINUX PLATFORM IS SELECTED")
+        # Use LibreOffice for conversion
+        # LibreOffice command for converting DOCX to PDF in headless mode
+        libreoffice_cmd = 'libreoffice --headless --convert-to pdf "{}"'.format(docx_file)
+        # Execute the command
+        os.system(libreoffice_cmd)
+        # Generate the PDF file name
+        pdf_path = os.path.splitext(docx_file)[0] + ".pdf"
+    else:
+        st.write("NO PLATFORM IS SELECTED")
+        raise NotImplementedError("Platform not supported")
 
     return pdf_path
-
-
-
-
 
 # Function to remove the downloaded document file from root directory
 def remove_document_file(file_path):
@@ -145,38 +200,19 @@ def remove_document_file(file_path):
         os.remove(file_path)
 
 
+
+
+
+
+
+
+
+
+
+
+
 def main():
     if 'username' in st.session_state:
-
-
-
-        st.title("DOCX to PDF Converter")
-
-        uploaded_file = st.file_uploader("Choose a DOCX file", type="docx")
-        if uploaded_file is not None:
-            # Save the uploaded file to a temporary location
-            with open("temp.docx", "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            
-            pdf_path = convert_to_pdf("temp.docx")
-            if pdf_path:
-                st.success(f"PDF saved to: {pdf_path}")
-                with open(pdf_path, "rb") as f:
-                    st.download_button("Download PDF", f, file_name=os.path.basename(pdf_path))
-            else:
-                st.error("Conversion failed.")
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -190,7 +226,9 @@ def main():
         worksheet_client_list = "Client_List" 
         df_client_list = load_dataframe(file_path, worksheet_client_list)
 
+    
         clients  = df_project_list['Client'].unique()
+
 
         col1, col2, col3 = st.columns([1,1,1])
         with col1:
@@ -210,16 +248,21 @@ def main():
         with col2:
             amount = st.number_input("Amount")
 
+
         filtered_vat = df_project_list[df_project_list['Client'] == client]['VAT %'].unique()
         vat          = st.selectbox("VAT %", filtered_vat)
 
         filtered_client_code = df_project_list[df_project_list['Client'] == client]['client_code'].unique()
+
+        
 
         filtered_projects = df_project_list[df_project_list['Client'] == client]['Project'].unique()          
         project = st.selectbox("Select Project", filtered_projects)
 
         filtered_description = df_project_list[df_project_list['Client'] == client]['description'].unique() 
         description = st.selectbox("Description",filtered_description)
+
+
 
         year = date.year
 
@@ -231,6 +274,8 @@ def main():
             with col2:
                 # Select download format
                 format_option = st.radio("Select download format", ["DOCX", "PDF"], key="format_option")
+
+
 
         # BUTTONS
         col1, col2,col3 = st.columns([1,1,2])
@@ -375,7 +420,7 @@ def download_section(template_doc, year, invoice_no, client, format_option):
                         tmp_download_link = download_link_pdf(pdf_file, 'filled_document.pdf', 'Click here to download PDF')
                         st.markdown(tmp_download_link, unsafe_allow_html=True)
                         remove_document_file('filled_document.docx')  # Adjust this path as per your actual file name
-                        remove_document_file('filled_document.pdf')   # Adjust this path as per your actual file name
+                        remove_document_file('filled_document.pdf')  # Adjust this path as per your actual file name
                 except:
                         file_name = f"{invoice_no}-{client}.docx"
                         tmp_download_link = download_link_docx(template_doc, file_name, 'Click here to download DOCX')
