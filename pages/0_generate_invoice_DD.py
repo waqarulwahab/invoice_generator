@@ -7,13 +7,11 @@ import base64
 import os
 from base64 import b64encode
 from streamlit_extras.switch_page_button import switch_page
-import os
-import sys
-
 
 st.sidebar.page_link('pages/0_generate_invoice_DD.py',     label="Generate Invoice",               icon="🏡")
 st.sidebar.page_link('pages/1_list_of_clients_projects.py',label="List of Clients / Projects List",icon="📓")    
 st.sidebar.page_link('pages/2_add_new_client_project.py',  label="Add New Client/Project record",  icon="✒️")  
+st.sidebar.page_link('pages/3_doc_to_pdf.py',              label="Convert To PDF",                 icon="🖨️")
 
 # Define SessionState class
 class SessionState:
@@ -36,6 +34,8 @@ session_state = SessionState(invoices=[])
 # Initialize invoices in session state
 if 'invoices' not in st.session_state:
     st.session_state.invoices = []
+
+
 
 
 # Custom CSS for the success message and animation
@@ -147,55 +147,6 @@ def download_link_docx(doc, year, invoice_no, client, filename, text):
 #     return pdf_path
 
 
-def convert_to_pdf(docx_file):
-
-    if sys.platform.startswith('win'):
-        st.write("WINDOW PLATFORM IS SELECTED")
-        import win32com.client
-        import pythoncom
-        
-        # Initialize COM
-        pythoncom.CoInitialize()
-        
-        try:
-            # Get the absolute path of the DOCX file
-            docx_path = os.path.abspath(docx_file)
-            # Generate the PDF file name
-            pdf_path = os.path.splitext(docx_path)[0] + ".pdf"
-            # Create an instance of the Word application
-            word = win32com.client.Dispatch("Word.Application")
-            try:
-                # Open the DOCX file
-                doc = word.Documents.Open(docx_path)
-                # Save the document as PDF
-                doc.SaveAs(pdf_path, FileFormat=17)  # 17 is the PDF file format
-                doc.Close()
-            except Exception as e:
-                raise e
-            finally:
-                # Close the Word application
-                word.Quit()
-        finally:
-            # Uninitialize COM
-            pythoncom.CoUninitialize()
-    elif sys.platform.startswith('linux'):
-        st.write("LINUX PLATFORM IS SELECTED")
-        # Use LibreOffice for conversion
-        # LibreOffice command for converting DOCX to PDF in headless mode
-        libreoffice_cmd = 'libreoffice --headless --convert-to pdf "{}"'.format(docx_file)
-        # Execute the command
-        os.system(libreoffice_cmd)
-        # Generate the PDF file name
-        pdf_path = os.path.splitext(docx_file)[0] + ".pdf"
-        # Move the PDF to the root directory
-        os.rename(pdf_path, os.path.basename(pdf_path))
-        pdf_path = os.path.basename(pdf_path)
-        st.write("DOWNLOAD SUCCESSFULLY")
-    else:
-        st.write("NO PLATFORM IS SELECTED")
-        raise NotImplementedError("Platform not supported")
-
-    return pdf_path
 
 # Function to remove the downloaded document file from root directory
 def remove_document_file(file_path):
@@ -204,23 +155,8 @@ def remove_document_file(file_path):
         os.remove(file_path)
 
 
-
-
-
-
-
-
-
-
-
-
-
 def main():
     if 'username' in st.session_state:
-
-
-
-
 
         file_path = os.path.join(os.getcwd(), 'InvoiceLogTemplate_DD_04062024.xlsx')  # Full file path - DD_04062024: UPDATED FILE NAME
         
@@ -387,17 +323,8 @@ def main():
                     download_section(template_doc, year, invoice_no, client, format_option)
                     
 
-                elif invoice_template == "Template-1":
-                    template_path = 'template1.docx'
-                    template_doc = Document(template_path)
-
-                    # Fill placeholders
-                    fill_placeholders(template_doc, data)
-                    # Simulate invoice generation
-                    with st.spinner('Generating invoice...'):
-                        time.sleep(4)  # Simulate time taken to generate the invoice
-                        
-                    download_section(template_doc, year, invoice_no, client, format_option)
+                elif invoice_template == "Template-2":
+                    st.error("Template 2 does not exists")
 
                 # Store the template and other information in session
                 session_state.template_doc = template_doc
@@ -406,7 +333,7 @@ def main():
                 session_state.invoice_generated = True  # Mark invoice as generated
 
             except Exception as e:
-                st.warning("ERROR: f{e}")
+                st.warning("Select Invoice Template")
 
     else:
         st.error("There's some issue, Its requires to login again your app!")
@@ -427,13 +354,13 @@ def download_section(template_doc, year, invoice_no, client, format_option):
                         st.markdown(tmp_download_link, unsafe_allow_html=True)
                         st.success('Invoice generated successfully!')
                     elif format_option == "PDF":
-                        # st.warning("This option will be add later")
-                        # Convert the document to PDF
-                        pdf_file = convert_to_pdf('filled_document.docx')
-                        tmp_download_link = download_link_pdf(pdf_file, 'filled_document.pdf', 'Click here to download PDF')
-                        st.markdown(tmp_download_link, unsafe_allow_html=True)
-                        remove_document_file('filled_document.docx')  # Adjust this path as per your actual file name
-                        remove_document_file('filled_document.pdf')  # Adjust this path as per your actual file name
+                        st.warning("This option will be add later")
+                        # # Convert the document to PDF
+                        # pdf_file = convert_to_pdf('filled_document.docx')
+                        # tmp_download_link = download_link_pdf(pdf_file, 'filled_document.pdf', 'Click here to download PDF')
+                        # st.markdown(tmp_download_link, unsafe_allow_html=True)
+                        # remove_document_file('filled_document.docx')  # Adjust this path as per your actual file name
+                        # remove_document_file('filled_document.pdf')  # Adjust this path as per your actual file name
                 except:
                         file_name = f"{invoice_no}-{client}.docx"
                         tmp_download_link = download_link_docx(template_doc, file_name, 'Click here to download DOCX')
