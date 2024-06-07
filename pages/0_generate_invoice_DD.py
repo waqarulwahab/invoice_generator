@@ -187,7 +187,10 @@ def convert_to_pdf(docx_file):
         os.system(libreoffice_cmd)
         # Generate the PDF file name
         pdf_path = os.path.splitext(docx_file)[0] + ".pdf"
-        st.write("DOWNLOAD SUCESSFULLY")
+        # Move the PDF to the root directory
+        os.rename(pdf_path, os.path.basename(pdf_path))
+        pdf_path = os.path.basename(pdf_path)
+        st.write("DOWNLOAD SUCCESSFULLY")
     else:
         st.write("NO PLATFORM IS SELECTED")
         raise NotImplementedError("Platform not supported")
@@ -403,7 +406,7 @@ def main():
                 session_state.invoice_generated = True  # Mark invoice as generated
 
             except Exception as e:
-                st.warning("Select Invoice Template")
+                st.warning("ERROR: f{e}")
 
     else:
         st.error("There's some issue, Its requires to login again your app!")
