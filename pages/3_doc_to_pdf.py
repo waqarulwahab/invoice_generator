@@ -11,17 +11,20 @@ st.sidebar.page_link('pages/3_doc_to_pdf.py',              label="Convert To PDF
 
 
 
-# Function to convert DOCX to PDF using unoconv
-def convert_to_pdf(docx_file, unoconv_path):
-    # Get the absolute path of the DOCX file
-    docx_path = os.path.abspath(docx_file)
-    # Generate the PDF file name
-    pdf_path = os.path.splitext(docx_path)[0] + ".pdf"
+import os
+import pypandoc
+import streamlit as st
+
+# Function to convert DOCX to PDF using pypandoc
+def convert_to_pdf(docx_file_path):
     try:
-        # Use unoconv to convert DOCX to PDF
-        cmd = [unoconv_path, '-f', 'pdf', '-o', os.path.dirname(pdf_path), docx_path]
-        subprocess.call(cmd)
-        # Return the path to the PDF
+        # Generate the PDF file name
+        pdf_path = os.path.splitext(docx_file_path)[0] + ".pdf"
+        
+        # Convert the DOCX file to PDF using pypandoc
+        output = pypandoc.convert_file(docx_file_path, 'pdf', outputfile=pdf_path)
+        assert output == ""
+
         return pdf_path
     except Exception as e:
         st.error(f"Conversion failed: {e}")
@@ -29,6 +32,7 @@ def convert_to_pdf(docx_file, unoconv_path):
 
 
 st.title("DOCX to PDF Converter")
+
 # File uploader
 uploaded_file = st.file_uploader("Upload a DOCX file", type=["docx"])
 
@@ -37,17 +41,17 @@ if uploaded_file is not None:
 
     # Check if the button is clicked
     if st.button("Convert to PDF"):
+        # Save uploaded file to a temporary location
         with open(uploaded_file.name, 'wb') as f:
             f.write(uploaded_file.getbuffer())
 
-        # Path to unoconv (replace with your absolute path)
-        unoconv_path = '/usr/bin/unoconv'
-
         # Convert the DOCX file to PDF
-        pdf_path = convert_to_pdf(uploaded_file.name, unoconv_path)
+        pdf_path = convert_to_pdf(uploaded_file.name)
 
         if pdf_path:
-            st.success(f"PDF file created: [Download PDF]({pdf_path})")
+            with open(pdf_path, "rb") as pdf_file:
+                st.download_button(label="Download PDF", data=pdf_file, file_name=os.path.basename(pdf_path))
+            st.success(f"PDF file created: {pdf_path}")
         else:
             st.error("Failed to convert DOCX to PDF. Please check the file and try again.")
 
