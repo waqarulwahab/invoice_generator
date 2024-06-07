@@ -187,6 +187,7 @@ def convert_to_pdf(docx_file):
         os.system(libreoffice_cmd)
         # Generate the PDF file name
         pdf_path = os.path.splitext(docx_file)[0] + ".pdf"
+        st.write("DOWNLOAD SUCESSFULLY")
     else:
         st.write("NO PLATFORM IS SELECTED")
         raise NotImplementedError("Platform not supported")
@@ -383,8 +384,17 @@ def main():
                     download_section(template_doc, year, invoice_no, client, format_option)
                     
 
-                elif invoice_template == "Template-2":
-                    st.error("Template 2 does not exists")
+                elif invoice_template == "Template-1":
+                    template_path = 'template1.docx'
+                    template_doc = Document(template_path)
+
+                    # Fill placeholders
+                    fill_placeholders(template_doc, data)
+                    # Simulate invoice generation
+                    with st.spinner('Generating invoice...'):
+                        time.sleep(4)  # Simulate time taken to generate the invoice
+                        
+                    download_section(template_doc, year, invoice_no, client, format_option)
 
                 # Store the template and other information in session
                 session_state.template_doc = template_doc
